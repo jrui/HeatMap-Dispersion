@@ -52,23 +52,69 @@ void write_image(char *file, Image *img) {
 }
 
 
-Image *heatmap(Image *img) {
+Image *heatmap(Image *img, int n_iter) {
   Pixel *pixels = img->pixels;
   int cols = img->width, rows = img->height;
-  int i, j;
+  int i, j, k;
+  printf("%d", &img->pixels[0].r);
 
-  for(i = 0; i < cols; i++) {
-    for(j = 0; j < rows; j++) {
-      if(i == 0) {
-        if(j == 0) {
-          pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i+1)*j].r + pixels[i*(j+1)].r) / 3);
-          pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i+1)*j].g + pixels[i*(j+1)].g) / 3);
-          pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i+1)*j].b + pixels[i*(j+1)].b) / 3);
+  for(k = 0; k < n_iter; k++) {
+    for(i = 0; i < cols; i++) {
+      for(j = 0; j < rows; j++) {
+        if(i == 0) {
+          if(j == 0) {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i+1)*j].r + pixels[i*(j+1)].r) / 3);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i+1)*j].g + pixels[i*(j+1)].g) / 3);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i+1)*j].b + pixels[i*(j+1)].b) / 3);
+          }
+          else if(j == rows - 1) {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i-1)*j].r + pixels[i*(j+1)].r) / 3);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i-1)*j].g + pixels[i*(j+1)].g) / 3);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i-1)*j].b + pixels[i*(j+1)].b) / 3);
+          }
+          else {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i-1)*j].r + pixels[(i+1)*j].r + pixels[i*(j+1)].r) / 4);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i-1)*j].g + pixels[(i+1)*j].g + pixels[i*(j+1)].g) / 4);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i-1)*j].b + pixels[(i+1)*j].b + pixels[i*(j+1)].b) / 4);
+          }
+        }
+        else if(i == cols - 1) {
+          if(j == 0) {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i+1)*j].r + pixels[i*(j-1)].r) / 3);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i+1)*j].g + pixels[i*(j-1)].g) / 3);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i+1)*j].b + pixels[i*(j-1)].b) / 3);
+          }
+          else if(j == rows - 1) {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i-1)*j].r + pixels[i*(j-1)].r) / 3);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i-1)*j].g + pixels[i*(j-1)].g) / 3);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i-1)*j].b + pixels[i*(j-1)].b) / 3);
+          }
+          else {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i-1)*j].r + pixels[(i+1)*j].r + pixels[i*(j-1)].r) / 4);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i-1)*j].g + pixels[(i+1)*j].g + pixels[i*(j-1)].g) / 4);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i-1)*j].b + pixels[(i+1)*j].b + pixels[i*(j-1)].b) / 4);
+          }
+        }
+        else {
+          if(j == 0) {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i+1)*j].r + pixels[i*(j+1)].r + pixels[i*(j-1)].r) / 4);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i+1)*j].g + pixels[i*(j+1)].g + pixels[i*(j-1)].g) / 4);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i+1)*j].b + pixels[i*(j+1)].b + pixels[i*(j-1)].b) / 4);
+          }
+          else if(j == rows - 1) {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i-1)*j].r + pixels[i*(j+1)].r + pixels[i*(j-1)].r) / 4);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i-1)*j].g + pixels[i*(j+1)].g + pixels[i*(j-1)].g) / 4);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i-1)*j].b + pixels[i*(j+1)].b + pixels[i*(j-1)].b) / 4);
+          }
+          else {
+            pixels[i*j].r = (int) floor((pixels[i*j].r + pixels[(i-1)*j].r + pixels[(i+1)*j].r + pixels[i*(j+1)].r + pixels[i*(j-1)].r) / 5);
+            pixels[i*j].g = (int) floor((pixels[i*j].g + pixels[(i-1)*j].g + pixels[(i+1)*j].g + pixels[i*(j+1)].g + pixels[i*(j-1)].g) / 5);
+            pixels[i*j].b = (int) floor((pixels[i*j].b + pixels[(i-1)*j].b + pixels[(i+1)*j].b + pixels[i*(j+1)].b + pixels[i*(j-1)].b) / 5);
+          }
         }
       }
     }
   }
-
 
   return img;
 }
@@ -79,6 +125,7 @@ int main(int argc, char const *argv[]) {
     printf("Please specify input and output files.\n");
   else {
     Image *img = read_image_file(strdup(argv[1]));
+    img = heatmap(img, 100);
     write_image(strdup(argv[2]), img);
   }
   return 0;
