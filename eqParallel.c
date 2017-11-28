@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 
 
 struct pixel {
@@ -63,7 +64,9 @@ Image *heatmap(Image *img, int n_iter) {
     p1[i] = (Pixel*) malloc(sizeof(struct pixel) * img->width);
 
   for(k = 0; k < n_iter; k++) {
+    #pragma omp parallel for
     for(i = 0; i < rows; i++) {
+      #pragma omp parallel for
       for(j = 0; j < cols; j++) {
         if(i == 0) {
           //Primeira linha
