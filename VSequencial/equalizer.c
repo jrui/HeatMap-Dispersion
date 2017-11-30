@@ -150,7 +150,7 @@ int main(int argc, char const *argv[]) {
     printf("Please specify input and output files.\n");
   else {
     Image *img = read_image_file(strdup(argv[1]));
-    img = heatmap(img, 500);
+    img = heatmap(img, atoi(argv[3]));
     write_image(strdup(argv[2]), img);
   }
   return 0;
