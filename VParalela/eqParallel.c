@@ -18,6 +18,9 @@ Image *read_image_file(char *file) {
   int i, j;
 
   fp = fopen(file, "r");
+
+  //Não dá para ler a linha de comentário... está a dar erro
+  //o %s nao reconhece a linha? nao :/
   fscanf(fp, "%c%d\n%d %d\n%d\n", &img->letter, &img->ident, &img->width, &img->height, &img->max);
 
   img->pixels = (int**) malloc(sizeof(int*) * img->height);
