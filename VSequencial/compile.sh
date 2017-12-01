@@ -1,1 +1,1 @@
-gcc -o Equalize equalizer.c -lm
+gcc -o Equalizer equalizer.c -lgomp -lm

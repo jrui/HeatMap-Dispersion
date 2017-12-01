@@ -2,20 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 
-
-struct pixel {
-  int r, g, b;
-};
-typedef struct pixel Pixel;
 
 struct image {
-  Pixel **pixels;
+  int **pixels;
   int height, width, max, ident;
   char letter;
 };
 typedef struct image Image;
-
 
 Image *read_image_file(char *file) {
   Image *img = (Image*) malloc(sizeof(struct image));
@@ -23,16 +18,13 @@ Image *read_image_file(char *file) {
   int i, j;
 
   fp = fopen(file, "r");
-  fscanf(fp, "%c%d %d %d %d\n", &img->letter, &img->ident, &img->width, &img->height, &img->max);
+  fscanf(fp, "%c%d\n%d %d\n%d\n", &img->letter, &img->ident, &img->width, &img->height, &img->max);
 
-  img->pixels = (Pixel**) malloc(sizeof(struct pixel) * img->height);
+  img->pixels = (int**) malloc(sizeof(int*) * img->height);
   for(i = 0; i < img->height; i++) {
-    img->pixels[i] = (Pixel*) malloc(sizeof(struct pixel) * img->width);
-    for(j = 0; j < img->width; j++) {
-      fscanf(fp, "%d", &(&img->pixels[i][j])->r);
-      fscanf(fp, "%d", &(&img->pixels[i][j])->g);
-      fscanf(fp, "%d", &(&img->pixels[i][j])->b);
-    }
+    img->pixels[i] = (int*) malloc(sizeof(int) * img->width);
+    for(j = 0; j < img->width; j++)
+      fscanf(fp, "%d", &img->pixels[i][j]);
   }
   fclose(fp);
 
@@ -43,107 +35,53 @@ Image *read_image_file(char *file) {
 void write_image(char *file, Image *img) {
   int i, j;
 
-  strcat(file, ".ppm");
   FILE *fp2 = fopen(file, "w");
 
-  fprintf(fp2, "%c%d %d %d %d\n", img->letter, img->ident, img->width, img->height, img->max);
+  fprintf(fp2, "%c%d\n%d %d\n%d\n", img->letter, img->ident, img->width, img->height, img->max);
   for(i = 0; i < img->height; i++)
     for(j = 0; j < img->width; j++)
-      fprintf(fp2, "%d %d %d\n", img->pixels[i][j].r, img->pixels[i][j].g, img->pixels[i][j].b);
+      fprintf(fp2, "%d\n", img->pixels[i][j]);
 }
 
 
 Image *heatmap(Image *img, int n_iter) {
-  Pixel **p2 = img->pixels;
-  int cols = img->width, rows = img->height;
+  int cols = img->width;
+  int rows = img->height;
   int i, j, k;
+  int **temp, **p;
 
-  Pixel **p1 = (Pixel**) malloc(sizeof(struct pixel) * img->height);
-  for(i = 0; i < img->height; i++)
-    p1[i] = (Pixel*) malloc(sizeof(struct pixel) * img->width);
+  double timeInit = omp_get_wtime();
 
   for(k = 0; k < n_iter; k++) {
+    p = (int**) malloc(sizeof(int*) * img->height);
+    for(i = 0; i < img->height; i++)
+      p[i] = (int*) malloc(sizeof(int) * img->width);
+
     for(i = 0; i < rows; i++) {
-      for(j = 0; j < cols; j++) {
-        if(i == 0) {
-          //Primeira linha
-          if(j == 0) {
-            //[0][0]
-            p1[i][j].r = floor((p2[i][j].r + p2[i+1][j].r + p2[i][j+1].r) / 3);
-            p1[i][j].g = floor((p2[i][j].g + p2[i+1][j].g + p2[i][j+1].g) / 3);
-            p1[i][j].b = floor((p2[i][j].b + p2[i+1][j].b + p2[i][j+1].b) / 3);
-          }
-          else {
-            if(j == cols - 1) {
-              //[0][cols]
-              p1[i][j].r = floor((p2[i][j].r + p2[i+1][j].r + p2[i][j-1].r) / 3);
-              p1[i][j].g = floor((p2[i][j].g + p2[i+1][j].g + p2[i][j-1].g) / 3);
-              p1[i][j].b = floor((p2[i][j].b + p2[i+1][j].b + p2[i][j-1].b) / 3);
-            }
-            else {
-              //[0][0<j<cols]
-              p1[i][j].r = floor((p2[i][j].r + p2[i+1][j].r + p2[i][j-1].r + p2[i][j+1].r) / 4);
-              p1[i][j].g = floor((p2[i][j].g + p2[i+1][j].g + p2[i][j-1].g + p2[i][j+1].g) / 4);
-              p1[i][j].b = floor((p2[i][j].b + p2[i+1][j].b + p2[i][j-1].b + p2[i][j+1].b) / 4);
-            }
-          }
-        }
-        else {
-          if(i == rows - 1) {
-            //ultima linha
-            if(j == 0) {
-              //[rows][0]
-              p1[i][j].r = floor((p2[i][j].r + p2[i-1][j].r + p2[i][j+1].r) / 3);
-              p1[i][j].g = floor((p2[i][j].g + p2[i-1][j].g + p2[i][j+1].g) / 3);
-              p1[i][j].b = floor((p2[i][j].b + p2[i-1][j].b + p2[i][j+1].b) / 3);
-            }
-            else {
-              if(j == cols - 1) {
-                //[rows][cols]
-                p1[i][j].r = floor((p2[i][j].r + p2[i-1][j].r + p2[i][j-1].r) / 3);
-                p1[i][j].g = floor((p2[i][j].g + p2[i-1][j].g + p2[i][j-1].g) / 3);
-                p1[i][j].b = floor((p2[i][j].b + p2[i-1][j].b + p2[i][j-1].b) / 3);
-              }
-              else {
-                //[rows][0<j<cols]
-                p1[i][j].r = floor((p2[i][j].r + p2[i-1][j].r + p2[i][j+1].r + p2[i][j-1].r) / 4);
-                p1[i][j].g = floor((p2[i][j].g + p2[i-1][j].g + p2[i][j+1].g + p2[i][j-1].g) / 4);
-                p1[i][j].b = floor((p2[i][j].b + p2[i-1][j].b + p2[i][j+1].b + p2[i][j-1].b) / 4);
-              }
-            }
-          }
-          else {
-            if(j == 0) {
-              //primeira coluna
-              //[0<x<rows][0]
-              p1[i][j].r = floor((p2[i][j].r + p2[i+1][j].r + p2[i-1][j].r + p2[i][j+1].r) / 4);
-              p1[i][j].g = floor((p2[i][j].g + p2[i+1][j].g + p2[i-1][j].g + p2[i][j+1].g) / 4);
-              p1[i][j].b = floor((p2[i][j].b + p2[i+1][j].b + p2[i-1][j].b + p2[i][j+1].b) / 4);
-            }
-            else {
-              if(j == rows - 1) {
-                //ultima coluna
-                p1[i][j].r = floor((p2[i][j].r + p2[i-1][j].r + p2[i+1][j].r + p2[i][j-1].r) / 4);
-                p1[i][j].g = floor((p2[i][j].g + p2[i-1][j].g + p2[i+1][j].g + p2[i][j-1].g) / 4);
-                p1[i][j].b = floor((p2[i][j].b + p2[i-1][j].b + p2[i+1][j].b + p2[i][j-1].b) / 4);
-              }
-              else {
-                p1[i][j].r = floor((p2[i][j].r + p2[i-1][j].r + p2[i+1][j].r + p2[i][j+1].r + p2[i][j-1].r) / 5);
-                p1[i][j].g = floor((p2[i][j].g + p2[i-1][j].g + p2[i+1][j].g + p2[i][j+1].g + p2[i][j-1].g) / 5);
-                p1[i][j].b = floor((p2[i][j].b + p2[i-1][j].b + p2[i+1][j].b + p2[i][j+1].b + p2[i][j-1].b) / 5);
-              }
-            }
-          }
-        }
-      }
+      p[i][0] = img->pixels[i][0];
+      p[i][cols-1] = img->pixels[i][cols-1];
     }
-    p2 = p1;
+
+    for(j = 0; j < cols; j++) {
+      p[0][j] = img->pixels[0][j];
+      p[rows-1][j] = img->pixels[rows-1][j];
+    }
+
+    for(i = 1; i < rows-1; i++) {
+      for(j = 1; j < cols-1; j++)
+        p[i][j] = (int) floor((img->pixels[i][j] + img->pixels[i-1][j] + img->pixels[i+1][j] + img->pixels[i][j+1] + img->pixels[i][j-1]) / 5);
+    }
+
+    for(i = 0; i < rows; i++) free(img->pixels[i]);
+    free(img->pixels);
+    img->pixels = p;
   }
 
-  img->pixels = p1;
+  double timeFin = omp_get_wtime();
+  printf("Tempo de cálculo: %f segundos\n", timeFin - timeInit);
+
   return img;
 }
-
 
 int main(int argc, char const *argv[]) {
   if(argc < 2)
