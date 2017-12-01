@@ -20,7 +20,9 @@ Image *read_image_file(char *file) {
   fp = fopen(file, "r");
 
   //Não dá para ler a linha de comentário... está a dar erro
-  //o %s nao reconhece a linha? nao :/
+  //o %s nao reconhece a linha? nao :/ usamos expressões regulares para ignorar a linha?
+  //mas tambem caga agora, a merda do heatmap é que nao estou mesmo a ver o que pode estar mal
+
   fscanf(fp, "%c%d\n%d %d\n%d\n", &img->letter, &img->ident, &img->width, &img->height, &img->max);
 
   img->pixels = (int**) malloc(sizeof(int*) * img->height);
@@ -62,7 +64,6 @@ Image *heatmap(Image *img, int n_iter) {
     p1[i][0] = p2[i][0];
     p1[i][cols-1] = p2[i][cols-1];
   }
-
   #pragma omp parallel for
   for(j = 0; j < cols; j++) {
     p1[0][j] = p2[0][j];
