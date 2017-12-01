@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
+#include <math.h>
 
 
 struct image {
@@ -50,40 +51,46 @@ void write_image(char *file, Image *img) {
 
 
 Image *heatmap(Image *img, int n_iter) {
-  int **p2 = img->pixels;
-  int cols = img->width, rows = img->height;
+  int cols = img->width;
+  int rows = img->height;
   int i, j, k;
-
-  int **p1 = (int**) malloc(sizeof(int*) * img->height);
-  for(i = 0; i < img->height; i++)
-    p1[i] = (int*) malloc(sizeof(int) * img->width);
+  int **temp, **p;
 
   double timeInit = omp_get_wtime();
-  #pragma omp parallel for
-  for(i = 0; i < rows; i++) {
-    p1[i][0] = p2[i][0];
-    p1[i][cols-1] = p2[i][cols-1];
-  }
-  #pragma omp parallel for
-  for(j = 0; j < cols; j++) {
-    p1[0][j] = p2[0][j];
-    p1[rows-1][j] = p2[rows-1][j];
-  }
 
   for(k = 0; k < n_iter; k++) {
+    p = (int**) malloc(sizeof(int*) * img->height);
+    #pragma omp parallel for
+    for(i = 0; i < img->height; i++)
+      p[i] = (int*) malloc(sizeof(int) * img->width);
+
+    #pragma omp parallel for
+    for(i = 0; i < rows; i++) {
+      p[i][0] = img->pixels[i][0];
+      p[i][cols-1] = img->pixels[i][cols-1];
+    }
+    #pragma omp parallel for
+    for(j = 0; j < cols; j++) {
+      p[0][j] = img->pixels[0][j];
+      p[rows-1][j] = img->pixels[rows-1][j];
+    }
+
     #pragma omp parallel for
     for(i = 1; i < rows-1; i++) {
       #pragma omp parallel for
-      for(j = 1; j < cols-1; j++) {
-        p1[i][j] = (p2[i][j] + p2[i-1][j] + p2[i+1][j] + p2[i][j+1] + p2[i][j-1]) / 5;
-      }
+      for(j = 1; j < cols-1; j++)
+        p[i][j] = (int) floor((img->pixels[i][j] + img->pixels[i-1][j] + img->pixels[i+1][j] + img->pixels[i][j+1] + img->pixels[i][j-1]) / 5);
     }
-    p2 = p1;
+
+    #pragma omp parallel for
+    for(i = 0; i < rows; i++) free(img->pixels[i]);
+    free(img->pixels);
+    img->pixels = p;
   }
+  
   double timeFin = omp_get_wtime();
   printf("Tempo de cálculo: %f segundos\n", timeFin - timeInit);
 
-  img->pixels = p1;
   return img;
 }
 
