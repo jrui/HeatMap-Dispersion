@@ -87,7 +87,12 @@ Image *heatmap(Image *img, int n_iter) {
     free(img->pixels);
     img->pixels = p;
   }
-  
+
+/*
+  #pragma omp parallel for
+  for (i = 0; i < rows; i++) free(p[i]);
+  free(p);
+  */
   double timeFin = omp_get_wtime();
   printf("Tempo de cálculo: %f segundos\n", timeFin - timeInit);
 
