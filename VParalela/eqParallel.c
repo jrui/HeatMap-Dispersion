@@ -19,11 +19,6 @@ Image *read_image_file(char *file) {
   int i, j;
 
   fp = fopen(file, "r");
-
-  //Não dá para ler a linha de comentário... está a dar erro
-  //o %s nao reconhece a linha? nao :/ usamos expressões regulares para ignorar a linha?
-  //mas tambem caga agora, a merda do heatmap é que nao estou mesmo a ver o que pode estar mal
-
   fscanf(fp, "%c%d\n%d %d\n%d\n", &img->letter, &img->ident, &img->width, &img->height, &img->max);
 
   img->pixels = (int**) malloc(sizeof(int*) * img->height);
@@ -58,41 +53,34 @@ Image *heatmap(Image *img, int n_iter) {
 
   double timeInit = omp_get_wtime();
 
+
+  p = (int**) malloc(sizeof(int*) * img->height);
+  for(i = 0; i < img->height; i++)
+    p[i] = (int*) malloc(sizeof(int) * img->width);
+
+  #pragma omp parallel for
+  for(i = 0; i < rows; i++) {
+    p[i][0] = img->pixels[i][0];
+    p[i][cols-1] = img->pixels[i][cols-1];
+  }
+  #pragma omp parallel for
+  for(j = 0; j < cols; j++) {
+    p[0][j] = img->pixels[0][j];
+    p[rows-1][j] = img->pixels[rows-1][j];
+  }
+
   for(k = 0; k < n_iter; k++) {
-    p = (int**) malloc(sizeof(int*) * img->height);
-    #pragma omp parallel for
-    for(i = 0; i < img->height; i++)
-      p[i] = (int*) malloc(sizeof(int) * img->width);
-
-    #pragma omp parallel for
-    for(i = 0; i < rows; i++) {
-      p[i][0] = img->pixels[i][0];
-      p[i][cols-1] = img->pixels[i][cols-1];
-    }
-    #pragma omp parallel for
-    for(j = 0; j < cols; j++) {
-      p[0][j] = img->pixels[0][j];
-      p[rows-1][j] = img->pixels[rows-1][j];
-    }
-
     #pragma omp parallel for
     for(i = 1; i < rows-1; i++) {
       #pragma omp parallel for
       for(j = 1; j < cols-1; j++)
         p[i][j] = (int) floor((img->pixels[i][j] + img->pixels[i-1][j] + img->pixels[i+1][j] + img->pixels[i][j+1] + img->pixels[i][j-1]) / 5);
     }
-
-    #pragma omp parallel for
-    for(i = 0; i < rows; i++) free(img->pixels[i]);
-    free(img->pixels);
-    img->pixels = p;
+    temp = p;
+    p = img->pixels;
+    img->pixels = temp;
   }
 
-/*
-  #pragma omp parallel for
-  for (i = 0; i < rows; i++) free(p[i]);
-  free(p);
-  */
   double timeFin = omp_get_wtime();
   printf("Tempo de cálculo: %f segundos\n", timeFin - timeInit);
 

@@ -52,29 +52,28 @@ Image *heatmap(Image *img, int n_iter) {
 
   double timeInit = omp_get_wtime();
 
+
+  p = (int**) malloc(sizeof(int*) * img->height);
+  for(i = 0; i < img->height; i++)
+    p[i] = (int*) malloc(sizeof(int) * img->width);
+
+  for(i = 0; i < rows; i++) {
+    p[i][0] = img->pixels[i][0];
+    p[i][cols-1] = img->pixels[i][cols-1];
+  }
+  for(j = 0; j < cols; j++) {
+    p[0][j] = img->pixels[0][j];
+    p[rows-1][j] = img->pixels[rows-1][j];
+  }
+
   for(k = 0; k < n_iter; k++) {
-    p = (int**) malloc(sizeof(int*) * img->height);
-    for(i = 0; i < img->height; i++)
-      p[i] = (int*) malloc(sizeof(int) * img->width);
-
-    for(i = 0; i < rows; i++) {
-      p[i][0] = img->pixels[i][0];
-      p[i][cols-1] = img->pixels[i][cols-1];
-    }
-
-    for(j = 0; j < cols; j++) {
-      p[0][j] = img->pixels[0][j];
-      p[rows-1][j] = img->pixels[rows-1][j];
-    }
-
     for(i = 1; i < rows-1; i++) {
       for(j = 1; j < cols-1; j++)
         p[i][j] = (int) floor((img->pixels[i][j] + img->pixels[i-1][j] + img->pixels[i+1][j] + img->pixels[i][j+1] + img->pixels[i][j-1]) / 5);
     }
-
-    for(i = 0; i < rows; i++) free(img->pixels[i]);
-    free(img->pixels);
-    img->pixels = p;
+    temp = p;
+    p = img->pixels;
+    img->pixels = temp;
   }
 
   double timeFin = omp_get_wtime();
