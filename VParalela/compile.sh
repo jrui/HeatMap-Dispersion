@@ -1,1 +1,1 @@
-gcc -o EqParallel eqParallel.c -lgomp -lm
+gcc -o EqParallel eqParallel.c -fopenmp

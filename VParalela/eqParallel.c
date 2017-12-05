@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omp.h>
-#include <math.h>
 
 
 struct image {
@@ -51,9 +50,8 @@ Image *heatmap(Image *img, int n_iter) {
   int i, j, k;
   int **temp, **p;
 
+
   double timeInit = omp_get_wtime();
-
-
   p = (int**) malloc(sizeof(int*) * img->height);
   for(i = 0; i < img->height; i++)
     p[i] = (int*) malloc(sizeof(int) * img->width);
@@ -73,15 +71,16 @@ Image *heatmap(Image *img, int n_iter) {
     #pragma omp parallel for
     for(i = 1; i < rows-1; i++) {
       #pragma omp parallel for
-      for(j = 1; j < cols-1; j++)
-        p[i][j] = (int) floor((img->pixels[i][j] + img->pixels[i-1][j] + img->pixels[i+1][j] + img->pixels[i][j+1] + img->pixels[i][j-1]) / 5);
+      for(j = 1; j < cols-1; j++) {
+        p[i][j] = (img->pixels[i][j] + img->pixels[i-1][j] + img->pixels[i+1][j] + img->pixels[i][j+1] + img->pixels[i][j-1]) / 5;
+      }
     }
     temp = p;
     p = img->pixels;
     img->pixels = temp;
   }
-
   double timeFin = omp_get_wtime();
+
   printf("Tempo de cálculo: %f segundos\n", timeFin - timeInit);
 
   return img;
