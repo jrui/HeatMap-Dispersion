@@ -5,3 +5,4 @@ This simple project demonstrates a heat map dispersion algorithm using OpenMP, c
 
 Collaborators:
 - [Carlos Silva](https://github.com/CarSilva)
+- [João Miguel](https://github.com/CaptainJRoy)
